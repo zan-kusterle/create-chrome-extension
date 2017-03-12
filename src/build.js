@@ -8,7 +8,7 @@ import { exec } from 'child_process'
 import fs from 'fs-extra'
 import color from 'colors/safe';
 import webpack from 'webpack'
-import chromeBinaryPath from 'chrome-location';
+import locateChrome from 'locate-chrome';
 
 // our
 import easyRequire from './utils/easyRequire'
@@ -96,28 +96,30 @@ function makeExtension(options) {
       console.log(color.yellow(`Building extension into '${options.release}'`))
 
       setTimeout(() => {
-        const commandParts = [`'${chromeBinaryPath}'`, `--pack-extension=${options.output}`]
+        locateChrome(function(chromeBinaryPath) {          
+          const commandParts = [`'${chromeBinaryPath}'`, `--pack-extension=${options.output}`]
 
-        if(options.key) {
-          commandParts.push(`--pack-extension-key=${options.key}`)
-        }
-
-        const command = `\$(${commandParts.join(" ")})`
-
-        exec(command, (error, stdout, stderr) => {
-          if(stdout) {
-            console.log(color.yellow('stdout: ' + stdout));
+          if(options.key) {
+            commandParts.push(`--pack-extension-key=${options.key}`)
           }
 
-          if(stderr) {
-            return reject('stderr: ' + stderr)
-          }
+          const command = `\$(${commandParts.join(" ")})`
 
-          if(error !== null) {
-            return reject('exec error: ' + stderr)
-          }
+          exec(command, (error, stdout, stderr) => {
+            if(stdout) {
+              console.log(color.yellow('stdout: ' + stdout));
+            }
 
-          resolve(`Extension builded in '${options.release}'`)
+            if(stderr) {
+              return reject('stderr: ' + stderr)
+            }
+
+            if(error !== null) {
+              return reject('exec error: ' + stderr)
+            }
+
+            resolve(`Extension builded in '${options.release}'`)
+          });
         })
         // Long enought to prevent some unexpected errors
       }, 1000)
